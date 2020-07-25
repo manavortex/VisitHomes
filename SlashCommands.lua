@@ -1,5 +1,5 @@
-local LSC = LibStub("LibSlashCommander")
-LAM = LibStub:GetLibrary("LibAddonMenu-2.0")
+local LSC = LibSlashCommander
+local LAM = LibAddonMenu2
 
 local function marco()
     JumpToSpecificHouse("@marcopolo184", 46)
