@@ -1,0 +1,8 @@
+## Title: VisitHomes
+## Author: manavortex
+## Version: 0.1
+## APIVersion: 100031
+## DependsOn LibSlashCommander
+
+VisitHomes.lua
+SlashCommands.lua
