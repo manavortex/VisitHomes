@@ -1,12 +1,11 @@
 local LSC = LibSlashCommander
-local LAM = LibAddonMenu2
 
 local function marco()
     JumpToSpecificHouse("@marcopolo184", 46)
 end
 
-local otherPeoplesHouses = {	
-
+local otherPeoplesHouses = {
+	
 	["@marcopolo184"] = {
 		["houseIds"] = {
 			[46] = "crafting stations",
@@ -17,7 +16,9 @@ local otherPeoplesHouses = {
 	},
 
 }
-myHouses = {
+VisitHomes.otherPeoplesHouses = otherPeoplesHouses
+
+local myHouses = {
 	["@manavortex"] = {
 		[1] = 39, 
 		[2] = 20, 
@@ -33,73 +34,56 @@ myHouses = {
 		[2] = 7, 
 		[3] = 5, 
 	}, 
-
+	
 }
+VisitHomes.myHouses = myHouses
 
-function GetHouseZoneId()
-	d(GetCurrentZoneHouseId())
-end
+function GetHouseZoneId() d(GetCurrentZoneHouseId()) end
 
-local function registerGoHome(slashCommand, houseId, houseDescription)
+local function registerVisitCommand(slashCommand, houseId, houseDescription, characterName)
+
+	houseDescription = houseDescription or GetCollectibleNickname(GetCollectibleIdForHouse(houseId))
+
+	local cbFunc = RequestJumpToHouse 
+	local args = tonumber(houseId)
+	if characterName then
+		cbFunc = JumpToSpecificHouse
+		args = tostring(characterName), tonumber(houseId)
 	
-	local callback = function() 
+	end
+	LSC:Register("/"..slashCommand, function() 
 		d("VisitHome: " .. houseDescription)
-		RequestJumpToHouse(tonumber(houseId)) 
-	end
-	
-	LSC:Register(slashCommand, callback, houseDescription)
+		cbFunc(args)
+	end, houseDescription)
 end
 
-local function getKeyForValue(ary, findme)
-	if nil == ary or {} == ary then return end
-	for key, value in pairs(ary) do
-		if value == findme then return key end
-	end
-end
-
-local function registerVisitCommand(slashCommand, characterName, houseDescription, houseId)
-	
-	local callback = function() 
-		d("VisitHome: " .. houseDescription)
-		JumpToSpecificHouse(tostring(characterName), tonumber(houseId)) 
-	end
-	
-	LSC:Register(slashCommand, callback, houseDescription)
-end
-
-
+local TYPE_STRING = "string"
 function VisitHomes.registerVisitCommands()
 
 	local accountName = GetUnitDisplayName('player')
 	
 	for playerName, data in pairs(otherPeoplesHouses) do
-		local isMine = playerName == accountName
+		local ownerName = (playerName == accountName and playerName)
 		for houseId, houseDescription in pairs(data.houseIds) do
 			local houseCommands = data.houseCommands[houseId]
-			if type(houseCommands) == "string" then			
-				if isMine then
-					registerGoHome("/" .. houseCommands, houseId, houseDescription)
-				else				
-					registerVisitCommand("/" .. houseCommands, playerName, houseDescription, houseId)
-				end
+			if type(houseCommands) == TYPE_STRING then
+				registerVisitCommand(houseCommands, houseId, houseDescription, ownerName)
 			else
 				for index, slashCommand in pairs(houseCommands) do
-					if isMine then
-						registerGoHome("/" .. slashCommand, houseId, houseDescription)
-					else				
-						registerVisitCommand("/" .. slashCommand, playerName, houseDescription, houseId)
-					end
+					registerVisitCommand(slashCommand, houseId, houseDescription, ownerName)
 				end
 			end					
 		end
 	end
 	
 	if not myHouses[accountName] then return end
-	for index, houseId in pairs(myHouses[accountName]) do		
-		registerGoHome("/home" .. tostring(index), houseId, GetCollectibleNickname(GetCollectibleIdForHouse(houseId)))
+	
+	for index, houseId in pairs(myHouses[accountName]) do
+		registerVisitCommand("home" .. tostring(index), houseId)
 	end
-	local houseId = myHouses[accountName][0]
-	if nil == SLASH_COMMANDS["/home"] then
-		registerGoHome("/home", houseId, GetCollectibleNickname(GetCollectibleIdForHouse(houseId)))
+	
+	local houseId = myHouses[accountName][1]
+	if houseId and not SLASH_COMMANDS["/home"] then
+		registerVisitCommand("home", houseId)
 	end
 end
